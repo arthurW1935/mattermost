@@ -1,5 +1,5 @@
-// Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
-// See LICENSE.txt for license information.
+// // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
+// // See LICENSE.txt for license information.
 
 package model
 
@@ -219,6 +219,7 @@ type WebSocketEvent struct {
 	broadcast       *WebsocketBroadcast
 	sequence        int64
 	precomputedJSON *precomputedWebSocketEventJSON
+	FromCluster     bool `json:"from_cluster"`
 }
 
 // PrecomputeJSON precomputes and stores the serialized JSON for all fields other than Sequence.
@@ -286,6 +287,7 @@ func (ev *WebSocketEvent) Copy() *WebSocketEvent {
 		broadcast:       ev.broadcast,
 		sequence:        ev.sequence,
 		precomputedJSON: ev.precomputedJSON,
+		FromCluster:     ev.FromCluster,
 	}
 	return evCopy
 }
@@ -297,6 +299,7 @@ func (ev *WebSocketEvent) DeepCopy() *WebSocketEvent {
 		broadcast:       ev.broadcast.copy(),
 		sequence:        ev.sequence,
 		precomputedJSON: ev.precomputedJSON.copy(),
+		FromCluster:     ev.FromCluster,
 	}
 	return evCopy
 }
@@ -335,6 +338,16 @@ func (ev *WebSocketEvent) SetSequence(seq int64) *WebSocketEvent {
 	evCopy := ev.Copy()
 	evCopy.sequence = seq
 	return evCopy
+}
+
+func (ev *WebSocketEvent) SetFromCluster(fromCluster bool) *WebSocketEvent {
+	evCopy := ev.Copy()
+	evCopy.FromCluster = fromCluster
+	return evCopy
+}
+
+func (ev *WebSocketEvent) IsFromCluster() bool {
+	return ev.FromCluster
 }
 
 func (ev *WebSocketEvent) IsValid() bool {

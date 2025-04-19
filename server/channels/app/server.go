@@ -580,20 +580,16 @@ func (s *Server) Channels() *Channels {
 
 func (s *Server) startInterClusterServices(license *model.License) error {
 	if license == nil {
-		mlog.Debug("No license provided; Remote Cluster services disabled")
+		mlog.Debug("No License provided, bypassing license check")
+	} else if !license.HasRemoteClusterService() && !license.HasSharedChannels() {
+		mlog.Debug("License does not have remote cluster or shared channel features, bypassing license check")
 		return nil
 	}
 
-	// Remote Cluster service
-
-	// License check (assume enabled if shared channels enabled)
-	if !license.HasRemoteClusterService() && !license.HasSharedChannels() {
-		mlog.Debug("License does not have Remote Cluster services enabled")
-		return nil
-	}
-
-	// Config check
-	if !*s.platform.Config().ConnectedWorkspacesSettings.EnableRemoteClusterService && !*s.platform.Config().ConnectedWorkspacesSettings.EnableSharedChannels {
+	mlog.Debug("EnableRemoteClusterService value", mlog.Bool("value", *s.platform.Config().ConnectedWorkspacesSettings.EnableRemoteClusterService))
+	mlog.Debug("EnableSharedChannels value", mlog.Bool("value", *s.platform.Config().ConnectedWorkspacesSettings.EnableSharedChannels))
+	// Corrected logic: Ensure the services are enabled in the config
+	if !*s.platform.Config().ConnectedWorkspacesSettings.EnableRemoteClusterService {
 		mlog.Debug("Remote Cluster Service disabled via config")
 		return nil
 	}
@@ -614,14 +610,6 @@ func (s *Server) startInterClusterServices(license *model.License) error {
 	s.serviceMux.Unlock()
 
 	// Shared Channels service (depends on remote cluster service)
-
-	// License check
-	if !license.HasSharedChannels() {
-		mlog.Debug("License does not have shared channels enabled")
-		return nil
-	}
-
-	// Config check
 	if !*s.platform.Config().ConnectedWorkspacesSettings.EnableSharedChannels {
 		mlog.Debug("Shared Channels Service disabled via config")
 		return nil
@@ -846,6 +834,10 @@ func (s *Server) Start() error {
 	// This needs to happen before because channels is dependent on the HTTP server.
 	if err := s.Channels().Start(); err != nil {
 		return errors.Wrap(err, "Unable to start channels")
+	}
+
+	if *s.platform.Config().ClusterSettings.Enable && s.platform.Cluster() != nil {
+		s.joinCluster = true
 	}
 
 	if s.joinCluster && s.platform.Cluster() != nil {
@@ -1307,10 +1299,6 @@ func doConfigCleanup(s *Server) {
 	if err := s.platform.CleanUpConfig(); err != nil {
 		mlog.Warn("Error while cleaning up configurations", mlog.Err(err))
 	}
-}
-
-func (s *Server) HandleMetrics(route string, h http.Handler) {
-	s.platform.HandleMetrics(route, h)
 }
 
 func (s *Server) sendLicenseUpForRenewalEmail(users map[string]*model.User, license *model.License) *model.AppError {

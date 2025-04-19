@@ -128,6 +128,7 @@ require (
 	github.com/go-ini/ini v1.67.0 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
+	github.com/go-redis/redis/v8 v8.11.5 // indirect
 	github.com/go-resty/resty/v2 v2.16.5 // indirect
 	github.com/goccy/go-json v0.10.4 // indirect
 	github.com/golang/geo v0.0.0-20230421003525-6adc56603217 // indirect
